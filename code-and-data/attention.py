@@ -4,24 +4,45 @@ import torch
 import torch.nn.functional as F
 import math
 
+Q_DIM = 3
+K_DIM = 3
+V_DIM = 3
+
 
 def create_kqv_matrix(input_vector_dim, n_heads = 1):
-    return nn.Linear(0, 0) # TODO fill in the correct dimensions
+    return nn.Linear(input_vector_dim, Q_DIM + K_DIM + V_DIM) # TODO fill in the correct dimensions
 
 def kqv(x, linear):
-    raise Exception("Not implemented.")
     B, N, D = x.size()
     # TODO compute k, q, and v
     # (can do it in 1 or 2 lines.)
+    kqv_x = linear(x)
+    k, q, v = kqv_x.chunk(3, dim=2)
     return k, q, v
 
+def kqv_test():
+    # Example input tensor
+    batch_size = 2
+    sequence_length = 10
+    input_vector_dim = 512
+    x = torch.randn(batch_size, sequence_length, input_vector_dim)
+    kqv_matrix = create_kqv_matrix(input_vector_dim)
+    k, q, v = kqv(x, kqv_matrix)
+    print(f'K shape: {k.shape}, Q shape: {q.shape}, V shape: {v.shape}')
+
+
 def attention_scores(a, b):
-    raise Exception("Not implemented.")
 
     B1, N1, D1 = a.size()
     B2, N2, D2 = b.size()
     assert B1 == B2
     assert D1 == D2
+
+    # Compute the dot product between a and b.T (transpose last two dimensions of b)
+    A = torch.bmm(a, b.transpose(1, 2))
+
+    # Scale the dot products by the square root of the dimensionality
+    A = A / torch.sqrt(torch.tensor(D1, dtype=torch.float32))
 
     # TODO compute A (remember: we are computing *scaled* dot product attention. don't forget the scaling.
     # (can do it in 1 or 2 lines.)
@@ -84,3 +105,6 @@ class CausalSelfAttention(nn.Module):
         sa = multi_head_attention_layer(x, self.kqv_matrices, self.mask)
         sa = self.proj(sa)
         return sa
+
+# TEST
+kqv_test()
