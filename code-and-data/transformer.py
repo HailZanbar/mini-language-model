@@ -26,7 +26,7 @@ class TransformerDecoderBlock(nn.Module):
             x = self.layer_norm_2(x)
             x = self.mlp(x)
             x = x + residual  # adding prev value
-            
+
             return x
         else:
             x = inputs
@@ -39,17 +39,20 @@ class TransformerDecoderBlock(nn.Module):
 class Embed(nn.Module):
     def __init__(self, vocab_size: int, embed_size: int, max_context_len):
         super().__init__()
-        self.token_embeddings = nn.Embedding(0, 0) # TODO set the right values
-        self.position_embeddings = nn.Embedding(0, 0) # TODO set the right values
+        self.token_embeddings = nn.Embedding(vocab_size, embed_size)
+        self.position_embeddings = nn.Embedding(max_context_len, embed_size)
         self.max_context_len = max_context_len
 
     def forward(self, x):
-        raise Exception("Not implemented") # TODO implement.
         # x has the shape (b x n) where b is batch dimension and n is sequence length.
         # each item is an int, indicating a vocabulary item.
         # The output should be of shape (b x n x d), where d is the embedding dimension.
-        #tok_embeddings = 
-        #pos_embeddings = ...
+        tok_embeddings = self.token_embeddings(x)
+        
+        b, n = x.shape
+        positions = torch.arange(n, device=x.device).unsqueeze(0).expand(b, n)
+        pos_embeddings = self.position_embeddings(positions)
+
         return tok_embeddings + pos_embeddings
 
 
