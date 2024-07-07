@@ -8,16 +8,27 @@ def test_attention_scores():
     b = torch.tensor([[[1,2,3,4],[1,2,3,4],[1,2,3,4]],[[1,2,3,4],[1,2,3,4],[1,2,3,4]]]) # a three-dim tensor
     expected_output_1 = torch.full((2, 3, 3), 15.0) # a three-dim tensor
 
-    # c = torch.tensor([]) # a three-dim tensor
-    # d = torch.tensor([]) # a three-dim tensor
-    # expected_output_2 = torch.tensor([]) # a three-dim tensor
-
     A = attention.attention_scores(a, b)
     print(A)
-    #B = attention.attention_scores(c, d)
 
     # Note that we use "allclose" and not ==, so we are less sensitive to float inaccuracies.
     assert torch.allclose(A, expected_output_1)
-    #assert torch.allclose(B, expected_output_2)
 
-test_attention_scores()
+# Works only without softmax in self_attention in with convertion of -inf to 0.
+def test_self_attention():
+    v = torch.tensor([[[1,2,3],[1,2,3],[1,2,3],[1,2,3]],[[1,2,3],[1,2,3],[1,2,3],[1,2,3]]], dtype=torch.float32) # a three-dim tensor
+    A = torch.tensor([[[1,2,3,4],[1,2,3,4],[1,2,3,4],[1,2,3,4]],[[1,2,3,4],[1,2,3,4],[1,2,3,4],[1,2,3,4]]], dtype=torch.float32) # a three-dim tensor
+    expected_output = torch.tensor([[[1,2,3],[3,6,9],[6,12,18],[10,20,30]],[[1,2,3],[3,6,9],[6,12,18],[10,20,30]]], dtype=torch.float32)
+
+    mask = attention.create_causal_mask(0, 0, 5)
+
+    sa = attention.self_attention(v, A, mask)
+    print(sa)
+
+    # Note that we use "allclose" and not ==, so we are less sensitive to float inaccuracies.
+    assert torch.allclose(sa, expected_output)
+
+
+
+#test_attention_scores()
+#test_self_attention()
