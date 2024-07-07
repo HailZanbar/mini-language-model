@@ -17,12 +17,12 @@ class TransformerDecoderBlock(nn.Module):
         if self.with_residuals:
             x = inputs
 
-            residual = x.copy()
+            residual = x
             x = self.layer_norm_1(x)
             x = self.causal_attention(x)
             x = x + residual  # adding prev value
 
-            residual = x.copy()
+            residual = x
             x = self.layer_norm_2(x)
             x = self.mlp(x)
             x = x + residual  # adding prev value
@@ -101,7 +101,7 @@ class TransformerLM(nn.Module):
             else:
                 torch.nn.init.xavier_uniform_(p)  # weights of linear layers
 
-    def sample_continuation(self, prefix: list[int], max_tokens_to_generate: int) -> list[int]:
+    def sample_continuation(self, prefix: "list[int]", max_tokens_to_generate: int) -> "list[int]":
         feed_to_lm = prefix[:]
         generated = []
         with torch.no_grad():
@@ -117,7 +117,7 @@ class TransformerLM(nn.Module):
                 feed_to_lm.append(sampled_token)
         return generated
 
-    def better_sample_continuation(self, prefix: list[int], max_tokens_to_generate: int, temperature: float, topK: int) -> list[int]:
+    def better_sample_continuation(self, prefix: "list[int]", max_tokens_to_generate: int, temperature: float, topK: int) -> "list[int]":
         raise Exception("Not implemented")
         # TODO implement this.
         # Temperature should be the temperature in which you sample.

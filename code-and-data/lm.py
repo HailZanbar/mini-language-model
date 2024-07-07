@@ -19,8 +19,8 @@ def compute_loss(logits, gold_labels):
     # NOTE you can either use cross_entropy from PyTorch, or implement the loss on your own.
 
     batch_size, seq_len, vocab_size = logits.shape
-    logits = logits.view(-1, vocab_size)  # (batch * seq_len, vocab_size)
-    gold_labels = gold_labels.view(-1)    # (batch * seq_len)
+    logits = logits.view(-1, vocab_size)     # (batch * seq_len, vocab_size)
+    gold_labels = gold_labels.reshape(-1)    # (batch * seq_len)
     
     # Compute the loss using cross_entropy, ignoring the padding token (if applicable)
     ignore_index = -1  # TODO: make sure it's a good value
