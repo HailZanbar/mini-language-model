@@ -15,8 +15,19 @@ class TransformerDecoderBlock(nn.Module):
 
     def forward(self, inputs):
         if self.with_residuals:
-            raise Exception("Not implemented")
-            # TODO add residuals support.
+            x = inputs
+
+            residual = x.copy()
+            x = self.layer_norm_1(x)
+            x = self.causal_attention(x)
+            x = x + residual  # adding prev value
+
+            residual = x.copy()
+            x = self.layer_norm_2(x)
+            x = self.mlp(x)
+            x = x + residual  # adding prev value
+
+            return x
         else:
             x = inputs
             x = self.layer_norm_1(x)
@@ -28,17 +39,20 @@ class TransformerDecoderBlock(nn.Module):
 class Embed(nn.Module):
     def __init__(self, vocab_size: int, embed_size: int, max_context_len):
         super().__init__()
-        self.token_embeddings = nn.Embedding(0, 0) # TODO set the right values
-        self.position_embeddings = nn.Embedding(0, 0) # TODO set the right values
+        self.token_embeddings = nn.Embedding(vocab_size, embed_size)
+        self.position_embeddings = nn.Embedding(max_context_len, embed_size)
         self.max_context_len = max_context_len
 
     def forward(self, x):
-        raise Exception("Not implemented") # TODO implement.
         # x has the shape (b x n) where b is batch dimension and n is sequence length.
         # each item is an int, indicating a vocabulary item.
         # The output should be of shape (b x n x d), where d is the embedding dimension.
-        #tok_embeddings = 
-        #pos_embeddings = ...
+        tok_embeddings = self.token_embeddings(x)
+        
+        b, n = x.shape
+        positions = torch.arange(n, device=x.device).unsqueeze(0).expand(b, n)
+        pos_embeddings = self.position_embeddings(positions)
+
         return tok_embeddings + pos_embeddings
 
 
@@ -75,22 +89,17 @@ class TransformerLM(nn.Module):
 
     def init_weights(self):
         # initialize weights
-        # TODO implement initialization logic for embeddings and linear layers.
         # The code break down the parameters by type (layer-norm, linear, embedding),
         # but can also condition on individual names, for example by checking pn.endswith(...).
         for pn, p in self.named_parameters():
-            if isinstance(p, nn.LayerNorm):
-                torch.nn.init.zeros_(p.bias)
-                torch.nn.init.ones_(p.weight)
-            elif isinstance(p, nn.Linear):
-                # TODO initialize p.weight and p.bias (if it is not None).
-                # You can look at initializers in torch.nn.init
-                pass
-            elif isinstance(p, nn.Embedding):
-                # TODO initialize p.weight and p.bias (if it is not None).
-                # You can look at initializers in torch.nn.init
-                pass
-
+            if 'bias' in pn:
+                torch.nn.init.zeros_(p)  # all biases start with 0
+            elif 'layer_norm' in pn:
+                torch.nn.init.ones_(p)
+            elif 'embed' in pn:
+                torch.nn.init.normal_(p, mean=0.0, std=0.02)
+            else:
+                torch.nn.init.xavier_uniform_(p)  # weights of linear layers
 
     def sample_continuation(self, prefix: list[int], max_tokens_to_generate: int) -> list[int]:
         feed_to_lm = prefix[:]
