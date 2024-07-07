@@ -117,10 +117,42 @@ class TransformerLM(nn.Module):
                 feed_to_lm.append(sampled_token)
         return generated
 
+
+    def sample_from_topK(self, distribution, k, num_samples):
+        top_k_probs, top_k_indices = torch.topk(distribution, k, dim=-1)
+
+        # Sample from the top-k probabilities
+        samples = torch.multinomial(top_k_probs, num_samples)
+
+        # Convert the indices of the top-k elements back to the original indices
+        final_samples = top_k_indices.gather(dim=-1, index=samples)
+
+        return final_samples
+    
+
     def better_sample_continuation(self, prefix: "list[int]", max_tokens_to_generate: int, temperature: float, topK: int) -> "list[int]":
-        raise Exception("Not implemented")
-        # TODO implement this.
         # Temperature should be the temperature in which you sample.
         # TopK indicates that we don't sample from the entire distribution, but only from the top k scoring tokens
         # for the given position.
+
+        feed_to_lm = prefix[:]
+        generated = []
+        with torch.no_grad():
+            while len(generated) < max_tokens_to_generate:
+                if len(feed_to_lm) > self.max_context_len:
+                    # if we have more tokens than context length, trim it to context length.
+                    feed_to_lm = feed_to_lm[-self.max_context_len:]
+                logits = self(torch.tensor([feed_to_lm], dtype=torch.int32))
+                logits_for_last_token = logits[0][-1]
+
+                # Add temperature
+                distribution_for_last_token = F.softmax(logits_for_last_token / temperature)
+
+                # Sample from topK probs
+                sampled_token = self.sample_from_topK(distribution_for_last_token, topK, num_samples=1)
+                generated.append(sampled_token)
+                feed_to_lm.append(sampled_token)
+        return generated
+    
+
 

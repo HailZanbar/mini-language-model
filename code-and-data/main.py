@@ -67,7 +67,7 @@ if __name__ == '__main__':
                 if num_batches % 100 == 0:
                     for _ in range(1):
                         model.eval()
-                        sampled = tokenizer.detokenize(model.sample_continuation(tokenizer.tokenize("Hello"), 500))
+                        sampled = tokenizer.detokenize(model.better_sample_continuation(tokenizer.tokenize("Hello"), 500, temperature=0.7, topK=5))
                         model.train()
                         print(f"Model sample: '''{sampled}'''")
                     print("")
