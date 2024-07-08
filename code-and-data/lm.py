@@ -11,7 +11,7 @@ def batch_to_labeled_samples(batch: torch.IntTensor) -> [torch.IntTensor, torch.
     labels = batch[:,1:]
     return (inputs, labels)
 
-def compute_loss(logits, gold_labels):
+def compute_loss(logits, gold_labels, ignore_index=0):
     # logits size is (batch, seq_len, vocab_size)
     # gold_labels size is (batch, seq_len)
     # NOTE remember to handle padding (ignore them in loss calculation!)
@@ -23,7 +23,6 @@ def compute_loss(logits, gold_labels):
     gold_labels = gold_labels.reshape(-1)    # (batch * seq_len)
     
     # Compute the loss using cross_entropy, ignoring the padding token (if applicable)
-    ignore_index = -1  # TODO: make sure it's a good value
     loss = F.cross_entropy(logits, gold_labels, ignore_index=ignore_index)
     
     return loss
