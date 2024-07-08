@@ -23,6 +23,7 @@ if __name__ == '__main__':
     num_batches_to_train = 50000
 
     tokenizer, tokenized_data = data.load_data(data_path)
+    pad_id = tokenizer.pad_id()
     # NOTE: are data items are longer by one than the sequence length,
     # They will be shortened by 1 when converted to training examples.
     data_iter = iter(data.RandomOrderDataIterator(tokenized_data, seq_len + 1))
@@ -53,7 +54,7 @@ if __name__ == '__main__':
 
             logits = model(batch_x)
 
-            loss = lm.compute_loss(logits, batch_y)
+            loss = lm.compute_loss(logits, batch_y, pad_id)
 
             # parameters update
             model.zero_grad()
