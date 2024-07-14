@@ -146,7 +146,7 @@ class TransformerLM(nn.Module):
                 logits_for_last_token = logits[0][-1]
 
                 # Add temperature
-                distribution_for_last_token = F.softmax(logits_for_last_token / temperature)
+                distribution_for_last_token = F.softmax(logits_for_last_token / temperature, dim=-1)
 
                 # Sample from topK probs
                 sampled_token = self.sample_from_topK(distribution_for_last_token, topK, num_samples=1)

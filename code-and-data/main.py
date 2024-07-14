@@ -62,7 +62,6 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), gradient_clipping)
             optimizer.step()
 
-            num_batches += 1
             if num_batches % 10 == 0:
                 print(f"Seen {num_batches} batches. last loss is: {loss.item()}")
                 if num_batches % 100 == 0:

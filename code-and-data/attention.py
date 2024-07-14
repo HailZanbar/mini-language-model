@@ -71,7 +71,8 @@ def self_attention(v, A, mask = None):
 
     # compute sa (corresponding to y in the assignemnt text).
     # As usual, the dimensions of v and of sa are (b x n x d).
-    norm_A = F.softmax(A, dim=1)
+    #norm_A = F.softmax(A, dim=1)
+    norm_A = F.softmax(A, dim=-1)
 
     # Compute the dot product between norm_A and v
     sa = torch.bmm(norm_A, v)
