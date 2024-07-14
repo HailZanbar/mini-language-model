@@ -77,6 +77,13 @@ class TransformerLM(nn.Module):
         self.layer_norm = nn.LayerNorm(embed_size).to(device)
         self.word_prediction = nn.Linear(embed_size, vocab_size).to(device)
         self.max_context_len = max_context_len
+        self.n_layers = n_layers
+        self.n_heads = n_heads
+        self.embed_size = embed_size
+        self.vocab_size = vocab_size
+        self.mlp_hidden_size = mlp_hidden_size
+        self.with_residuals = with_residuals
+
 
         self.init_weights()
 
@@ -157,6 +164,34 @@ class TransformerLM(nn.Module):
                 generated.append(sampled_token)
                 feed_to_lm.append(sampled_token)
         return generated
+    
+
+    def save_model(self, path):
+        torch.save({
+            'model_state_dict': self.state_dict(),
+            'n_layers': self.n_layers,
+            'n_heads': self.n_heads,
+            'embed_size': self.embed_size,
+            'max_context_len': self.max_context_len,
+            'vocab_size': self.vocab_size,
+            'mlp_hidden_size': self.mlp_hidden_size,
+            'with_residuals': self.with_residuals
+        }, path)
+
+    @classmethod
+    def load_model(cls, path):
+        checkpoint = torch.load(path)
+        model = cls(
+            n_layers=checkpoint['n_layers'],
+            n_heads=checkpoint['n_heads'],
+            embed_size=checkpoint['embed_size'],
+            max_context_len=checkpoint['max_context_len'],
+            vocab_size=checkpoint['vocab_size'],
+            mlp_hidden_size=checkpoint['mlp_hidden_size'],
+            with_residuals=checkpoint['with_residuals'],
+        )
+        model.load_state_dict(checkpoint['model_state_dict'])
+        return model
     
 
 

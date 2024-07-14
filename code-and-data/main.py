@@ -33,6 +33,8 @@ if __name__ == '__main__':
     # They will be shortened by 1 when converted to training examples.
     data_iter = iter(data.RandomOrderDataIterator(tokenized_data, seq_len + 1))
 
+    model_path = "transformer_lm.pth"
+
     model: torch.nn.Module = TransformerLM(
             n_layers,
             n_heads,
@@ -63,7 +65,7 @@ if __name__ == '__main__':
             logits = model(batch_x)
 
             loss = lm.compute_loss(logits, batch_y, pad_id)
-
+            
             # parameters update
             model.zero_grad()
             loss.backward()
@@ -85,3 +87,11 @@ if __name__ == '__main__':
                 until_now = curr_time - start_time
                 batches_to_sec = num_batches / until_now
                 print(f"average number of batches to a second: {round(batches_to_sec, 3)}")
+            
+            # Stop the training and save the trained model
+            if loss.item() <= 0.4:
+                model.save_model(model_path)
+                print("Model saved to checkpoint.")
+                break
+        break
+
