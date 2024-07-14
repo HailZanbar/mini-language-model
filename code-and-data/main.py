@@ -1,5 +1,10 @@
 from __future__ import annotations
 import torch
+import time
+
+# Set device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 if __name__ == '__main__':
     import torch
@@ -36,11 +41,11 @@ if __name__ == '__main__':
             tokenizer.vocab_size(),
             mlp_hidden_size,
             with_residuals = True,
-        )
+        ).to(device)
 
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate, betas=[0.9, 0.95])
 
-
+    start_time = time.time()
 
     model.train()
     
@@ -51,7 +56,10 @@ if __name__ == '__main__':
             num_batches = num_batches + 1
 
             batch_x, batch_y = lm.batch_to_labeled_samples(batch)
-
+            # Move batch_x and batch_y to GPU
+            batch_x = batch_x.to(device)
+            batch_y = batch_y.to(device)
+            
             logits = model(batch_x)
 
             loss = lm.compute_loss(logits, batch_y, pad_id)
@@ -71,3 +79,9 @@ if __name__ == '__main__':
                         model.train()
                         print(f"Model sample: '''{sampled}'''")
                     print("")
+
+            if num_batches % 50 == 0:
+                curr_time = time.time()
+                until_now = curr_time - start_time
+                batches_to_sec = num_batches / until_now
+                print(f"average number of batches to a second: {round(batches_to_sec, 3)}")

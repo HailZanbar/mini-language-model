@@ -8,6 +8,9 @@ import math
 # K_DIM = 3
 # V_DIM = 3
 
+# Set the device (CPU or GPU)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def create_kqv_matrix(input_vector_dim, n_heads = 1):
     new_dim = int(input_vector_dim / n_heads)
@@ -26,8 +29,8 @@ def kqv_test():
     batch_size = 2
     sequence_length = 10
     input_vector_dim = 512
-    x = torch.randn(batch_size, sequence_length, input_vector_dim)
-    kqv_matrix = create_kqv_matrix(input_vector_dim, 2)
+    x = torch.randn(batch_size, sequence_length, input_vector_dim).to(device)
+    kqv_matrix = create_kqv_matrix(input_vector_dim, 2).to(device)
     k, q, v = kqv(x, kqv_matrix)
     print(f'K shape: {k.shape}, Q shape: {q.shape}, V shape: {v.shape}')
 
@@ -43,7 +46,7 @@ def attention_scores(a, b):
     A = torch.bmm(a, b.transpose(1, 2))
 
     # Scale the dot products by the square root of the dimensionality
-    A = A / torch.sqrt(torch.tensor(D1, dtype=torch.float32))
+    A = A / torch.sqrt(torch.tensor(D1, dtype=torch.float32, device=device))
 
     return A
 
@@ -56,7 +59,7 @@ def create_causal_mask(embed_dim, n_heads, max_context_len):
 
     # Create an n x n lower triangular matrix
     n = max_context_len
-    mask = torch.tril(torch.ones((1, n, n), dtype=torch.float32))
+    mask = torch.tril(torch.ones((1, n, n), dtype=torch.float32, device=device))
     return mask
 
 
@@ -108,14 +111,14 @@ class CausalSelfAttention(nn.Module):
         assert embed_dim % n_heads == 0
         # the linear layers used for k, q, v computations:
         # each linear is for a different head, but for all of k, q and v for this head.
-        self.kqv_matrices = nn.ModuleList([create_kqv_matrix(embed_dim, n_heads) for i in range(n_heads)])
+        self.kqv_matrices = nn.ModuleList([create_kqv_matrix(embed_dim, n_heads).to(device) for i in range(n_heads)])
         # For use in the causal part.  "register_buffer" is used to store a tensor which is fixed but is not a parameter of the model.
         # You can then access it with: self.mask
-        mask = create_causal_mask(embed_dim, n_heads, max_context_len)
+        mask = create_causal_mask(embed_dim, n_heads, max_context_len).to(device)
         self.register_buffer("mask", mask)
         self.n_heads = n_heads
         self.embed_dim = embed_dim
-        self.proj = nn.Linear(embed_dim, embed_dim)
+        self.proj = nn.Linear(embed_dim, embed_dim).to(device)
 
     def forward(self, x):
         sa = multi_head_attention_layer(x, self.kqv_matrices, self.mask)
