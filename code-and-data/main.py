@@ -82,11 +82,11 @@ if __name__ == '__main__':
                         print(f"Model sample: '''{sampled}'''")
                     print("")
 
-            if num_batches % 50 == 0:
+            if num_batches % 100 == 0:
                 curr_time = time.time()
                 until_now = curr_time - start_time
                 batches_to_sec = num_batches / until_now
-                print(f"average number of batches to a second: {round(batches_to_sec, 3)}")
+                print(f"Time until now: {int(until_now//60):02}:{int(until_now%60):02}. Average batches per second: {round(batches_to_sec, 3)}")
             
             # Stop the training and save the trained model
             if loss.item() <= 0.4:
