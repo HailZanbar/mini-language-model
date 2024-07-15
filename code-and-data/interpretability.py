@@ -14,7 +14,7 @@ tokenizer, tokenized_data = data.load_data(data_path)
 pad_id = tokenizer.pad_id()
 
 model_path = "transformer_lm.pth"
-model = TransformerLM.load_model(model_path)
+model = TransformerLM.load_model(model_path, device)
 print("Model loaded from checkpoint.")
 
 

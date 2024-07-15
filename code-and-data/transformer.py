@@ -179,8 +179,11 @@ class TransformerLM(nn.Module):
         }, path)
 
     @classmethod
-    def load_model(cls, path):
-        checkpoint = torch.load(path)
+    def load_model(cls, path, device):
+        if device == torch.device('cpu'):
+            checkpoint = torch.load(path, map_location=torch.device('cpu'))
+        else:
+            checkpoint = torch.load(path)
         model = cls(
             n_layers=checkpoint['n_layers'],
             n_heads=checkpoint['n_heads'],

@@ -9,11 +9,13 @@ import seaborn as sns
 # Set the device (CPU or GPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def plot_attention_weights(attention_weights, layer_num, head_num):
+INTERPRET_MODE = False
+
+def plot_attention_weights(attention_weights):
     for j, attention_weight in enumerate(attention_weights):
         plt.figure(figsize=(10, 10))
         sns.heatmap(attention_weight.detach().cpu().numpy(), cmap='viridis')
-        plt.title(f'Layer {layer_num + 1}, Head {j + 1}')
+        plt.title(f'Attention Heatmap')
         plt.xlabel('Key Position')
         plt.ylabel('Query Position')
         plt.show()
@@ -83,7 +85,8 @@ def self_attention(v, A, mask = None):
     #norm_A = F.softmax(A, dim=1)
     norm_A = F.softmax(A, dim=-1)
 
-    plot_attention_weights(norm_A)
+    if INTERPRET_MODE:
+        plot_attention_weights(norm_A)
 
     # Compute the dot product between norm_A and v
     sa = torch.bmm(norm_A, v)
