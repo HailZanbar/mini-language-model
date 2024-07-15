@@ -3,14 +3,20 @@ from torch import nn
 import torch
 import torch.nn.functional as F
 import math
-
-# Q_DIM = 3
-# K_DIM = 3
-# V_DIM = 3
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Set the device (CPU or GPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+def plot_attention_weights(attention_weights, layer_num, head_num):
+    for j, attention_weight in enumerate(attention_weights):
+        plt.figure(figsize=(10, 10))
+        sns.heatmap(attention_weight.detach().cpu().numpy(), cmap='viridis')
+        plt.title(f'Layer {layer_num + 1}, Head {j + 1}')
+        plt.xlabel('Key Position')
+        plt.ylabel('Query Position')
+        plt.show()
 
 def create_kqv_matrix(input_vector_dim, n_heads = 1):
     new_dim = int(input_vector_dim / n_heads)
@@ -76,6 +82,8 @@ def self_attention(v, A, mask = None):
     # As usual, the dimensions of v and of sa are (b x n x d).
     #norm_A = F.softmax(A, dim=1)
     norm_A = F.softmax(A, dim=-1)
+
+    plot_attention_weights(norm_A)
 
     # Compute the dot product between norm_A and v
     sa = torch.bmm(norm_A, v)
