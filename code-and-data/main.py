@@ -6,6 +6,21 @@ import os
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# functions to save losses by epoch in file
+def init_result_file(path, params):
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    with open(path, 'w') as f:
+        write_params = '\t'.join([f"{key}: {value}" for key, value in params.items()])
+        f.write(write_params + '\n')
+
+def add_results(path, loss_values):
+    with open(path, 'a') as f:
+        for val in loss_values:
+            f.write(str(val) + '\n')
+
+
 
 if __name__ == '__main__':
     import torch
@@ -60,7 +75,7 @@ if __name__ == '__main__':
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate, betas=[0.9, 0.95])
 
     start_time = time.time()
-    model.init_result_file(results_path, params)
+    init_result_file(results_path, params)
 
     model.train()
     
@@ -105,7 +120,7 @@ if __name__ == '__main__':
                     print(f"Time until now: {int(until_now//60):02}:{int(until_now%60):02}. Average batches per second: {round(batches_to_sec, 3)}")
 
                     # save losses to file (append only recent losses)
-                    model.add_results(results_path, losses)
+                    add_results(results_path, losses)
 
             
             # Stop the training and save the trained model
@@ -115,18 +130,4 @@ if __name__ == '__main__':
                 break
         break
 
-
-
-def init_result_file(path, params):
-    # Ensure the directory exists
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-
-    with open(path, 'w') as f:
-        write_params = '\t'.join([f"{key}: {value}" for key, value in params.items()])
-        f.write(write_params + '\n')
-
-def add_results(path, loss_values):
-    with open(path, 'a') as f:
-        for val in loss_values:
-            f.write(str(val) + '\n')
 
