@@ -9,10 +9,10 @@ import seaborn as sns
 # Set the device (CPU or GPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-INTERPRET_MODE = False
+INTERPRET_MODE = True
 
 def plot_attention_weights(attention_weights):
-    for j, attention_weight in enumerate(attention_weights):
+    for attention_weight in attention_weights:
         plt.figure(figsize=(10, 10))
         sns.heatmap(attention_weight.detach().cpu().numpy(), cmap='viridis')
         plt.title(f'Attention Heatmap')
@@ -74,6 +74,7 @@ def create_causal_mask(embed_dim, n_heads, max_context_len):
 def self_attention(v, A, mask = None):
 
     B, N, D = A.size()
+    print("A size:", B, N, D)
 
     # Slice mask to create a 1 x N x N tensor
     mask = mask[:, :N, :N]
