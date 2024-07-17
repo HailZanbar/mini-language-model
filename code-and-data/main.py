@@ -1,6 +1,7 @@
 from __future__ import annotations
 import torch
 import time
+import os
 
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -24,6 +25,16 @@ if __name__ == '__main__':
 
     learning_rate = 5e-4
     gradient_clipping = 1.0
+    dropout = False
+
+    params = {  # params to be played with
+        'batch_size': batch_size,
+        'n_layers': n_layers,
+        'n_heads': n_heads,
+        'embed_size': embed_size,
+        'learning_rate': learning_rate,
+        'dropout': dropout
+    }
 
     num_batches_to_train = 50000
 
@@ -34,6 +45,7 @@ if __name__ == '__main__':
     data_iter = iter(data.RandomOrderDataIterator(tokenized_data, seq_len + 1))
 
     model_path = "transformer_lm.pth"
+    results_path = r"results/basic.txt"
 
     model: torch.nn.Module = TransformerLM(
             n_layers,
@@ -48,6 +60,7 @@ if __name__ == '__main__':
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate, betas=[0.9, 0.95])
 
     start_time = time.time()
+    model.init_result_file(results_path, params)
 
     model.train()
     
@@ -72,8 +85,11 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), gradient_clipping)
             optimizer.step()
 
+            losses = []
             if num_batches % 10 == 0:
                 print(f"Seen {num_batches} batches. last loss is: {loss.item()}")
+                losses.append(loss.item())
+
                 if num_batches % 100 == 0:
                     for _ in range(1):
                         model.eval()
@@ -82,11 +98,15 @@ if __name__ == '__main__':
                         print(f"Model sample: '''{sampled}'''")
                     print("")
 
-            if num_batches % 100 == 0:
-                curr_time = time.time()
-                until_now = curr_time - start_time
-                batches_to_sec = num_batches / until_now
-                print(f"Time until now: {int(until_now//60):02}:{int(until_now%60):02}. Average batches per second: {round(batches_to_sec, 3)}")
+                    # print some time details
+                    curr_time = time.time()
+                    until_now = curr_time - start_time
+                    batches_to_sec = num_batches / until_now
+                    print(f"Time until now: {int(until_now//60):02}:{int(until_now%60):02}. Average batches per second: {round(batches_to_sec, 3)}")
+
+                    # save losses to file (append only recent losses)
+                    model.add_results(results_path, losses)
+
             
             # Stop the training and save the trained model
             if loss.item() <= 0.4:
@@ -94,4 +114,19 @@ if __name__ == '__main__':
                 print("Model saved to checkpoint.")
                 break
         break
+
+
+
+def init_result_file(path, params):
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    with open(path, 'w') as f:
+        write_params = '\t'.join([f"{key}: {value}" for key, value in params.items()])
+        f.write(write_params + '\n')
+
+def add_results(path, loss_values):
+    with open(path, 'a') as f:
+        for val in loss_values:
+            f.write(str(val) + '\n')
 
