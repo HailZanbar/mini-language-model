@@ -7,11 +7,13 @@ import mlp
 # Set the device (CPU or GPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+dropout = True
 
 class TransformerDecoderBlock(nn.Module):
     def __init__(self, n_heads: int, embed_size: int, mlp_hidden_size: int, max_context_len, with_residuals: bool = False):
         super().__init__()
         self.causal_attention = attention.CausalSelfAttention(embed_size, n_heads, max_context_len).to(device)
+        self.dropout = nn.Dropout(0.1)  # Define the dropout layer
         self.mlp = mlp.MLP(embed_size, mlp_hidden_size).to(device)
         self.layer_norm_1 = nn.LayerNorm(embed_size).to(device)
         self.layer_norm_2 = nn.LayerNorm(embed_size).to(device)
@@ -24,6 +26,8 @@ class TransformerDecoderBlock(nn.Module):
             residual = x
             x = self.layer_norm_1(x)
             x = self.causal_attention(x)
+            if dropout:
+                x = self.dropout(x)  # adding some dropout
             x = x + residual  # adding prev value
 
             residual = x
@@ -36,6 +40,8 @@ class TransformerDecoderBlock(nn.Module):
             x = inputs
             x = self.layer_norm_1(x)
             x = self.causal_attention(x)
+            if dropout:
+                x = self.dropout(x)  # adding some dropout
             x = self.layer_norm_2(x)
             x = self.mlp(x)
             return x
@@ -73,6 +79,7 @@ class TransformerLM(nn.Module):
             ):
         super().__init__()
         self.embed = Embed(vocab_size, embed_size, max_context_len).to(device)
+        self.dropout = nn.Dropout(p=0.1)  # Define the dropout layer
         self.layers = nn.ModuleList([TransformerDecoderBlock(n_heads, embed_size, mlp_hidden_size, max_context_len, with_residuals).to(device) for _ in range(n_layers)])
         self.layer_norm = nn.LayerNorm(embed_size).to(device)
         self.word_prediction = nn.Linear(embed_size, vocab_size).to(device)
@@ -92,6 +99,8 @@ class TransformerLM(nn.Module):
 
     def forward(self, inputs):
         x = self.embed(inputs)
+        if dropout:
+            x = self.dropout(x)
         for layer in self.layers:
             x = layer(x)
         x = self.layer_norm(x)

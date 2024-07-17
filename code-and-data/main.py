@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     learning_rate = 5e-4
     gradient_clipping = 1.0
-    dropout = False
+    dropout = True
 
     params = {  # params to be played with
         'batch_size': batch_size,
@@ -51,7 +51,7 @@ if __name__ == '__main__':
         'dropout': dropout
     }
 
-    num_batches_to_train = 50000
+    num_batches_to_train = 50000  # 50000
 
     tokenizer, tokenized_data = data.load_data(data_path)
     pad_id = tokenizer.pad_id()
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     data_iter = iter(data.RandomOrderDataIterator(tokenized_data, seq_len + 1))
 
     model_path = "transformer_lm.pth"
-    results_path = r"results/basic.txt"
+    results_path = r"results/residual full.txt"
 
     model: torch.nn.Module = TransformerLM(
             n_layers,
@@ -76,6 +76,7 @@ if __name__ == '__main__':
 
     start_time = time.time()
     init_result_file(results_path, params)
+    losses = []
 
     model.train()
     
@@ -100,7 +101,6 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), gradient_clipping)
             optimizer.step()
 
-            losses = []
             if num_batches % 10 == 0:
                 print(f"Seen {num_batches} batches. last loss is: {loss.item()}")
                 losses.append(loss.item())
@@ -121,6 +121,7 @@ if __name__ == '__main__':
 
                     # save losses to file (append only recent losses)
                     add_results(results_path, losses)
+                    losses = []
 
             
             # Stop the training and save the trained model
