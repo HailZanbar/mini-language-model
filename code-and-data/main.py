@@ -60,7 +60,8 @@ if __name__ == '__main__':
     data_iter = iter(data.RandomOrderDataIterator(tokenized_data, seq_len + 1))
 
     model_path = "transformer_lm.pth"
-    results_path = r"results/residual full.txt"
+    losses_path = f"results/{n_layers}_layers_{n_heads}_heads_losses.txt"
+    text_path = f'results/{n_layers}_layers_{n_heads}_heads_snippet.txt'
 
     model: torch.nn.Module = TransformerLM(
             n_layers,
@@ -75,7 +76,7 @@ if __name__ == '__main__':
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate, betas=[0.9, 0.95])
 
     start_time = time.time()
-    init_result_file(results_path, params)
+    init_result_file(losses_path, params)
     losses = []
 
     model.train()
@@ -105,30 +106,33 @@ if __name__ == '__main__':
                 print(f"Seen {num_batches} batches. last loss is: {loss.item()}")
                 losses.append(loss.item())
 
-                if num_batches % 100 == 0:
-                    for _ in range(1):
-                        model.eval()
-                        sampled = tokenizer.detokenize(model.better_sample_continuation(tokenizer.tokenize("Hello"), 500, temperature=0.7, topK=5))
-                        model.train()
-                        print(f"Model sample: '''{sampled}'''")
-                    print("")
+            if num_batches % 1000 == 0:
+                for _ in range(1):
+                    model.eval()
+                    sampled = tokenizer.detokenize(model.better_sample_continuation(tokenizer.tokenize("Hello"), 500, temperature=0.7, topK=5))
+                    model.train()
+                    print(f"Model sample: '''{sampled}'''")
+                    # save snippet to file:
+                    with open(text_path, 'w') as file:
+                        file.write(sampled)
+                print("")
 
-                    # print some time details
-                    curr_time = time.time()
-                    until_now = curr_time - start_time
-                    batches_to_sec = num_batches / until_now
-                    print(f"Time until now: {int(until_now//60):02}:{int(until_now%60):02}. Average batches per second: {round(batches_to_sec, 3)}")
+                # print some time details
+                curr_time = time.time()
+                until_now = curr_time - start_time
+                batches_to_sec = num_batches / until_now
+                print(f"Time until now: {int(until_now//60):02}:{int(until_now%60):02}. Average batches per second: {round(batches_to_sec, 3)}")
 
-                    # save losses to file (append only recent losses)
-                    add_results(results_path, losses)
-                    losses = []
+                # save losses to file (append only recent losses)
+                add_results(losses_path, losses)
+                losses = []
 
             
-            # Stop the training and save the trained model
-            if loss.item() <= 0.4:
-                model.save_model(model_path)
-                print("Model saved to checkpoint.")
-                break
+            # # Stop the training and save the trained model
+            # if loss.item() <= 0.4:
+            #     model.save_model(model_path)
+            #     print("Model saved to checkpoint.")
+            #     break
         break
 
 
