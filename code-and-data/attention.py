@@ -5,20 +5,26 @@ import torch.nn.functional as F
 import math
 import matplotlib.pyplot as plt
 import seaborn as sns
+from matplotlib.backends.backend_pdf import PdfPages
 
 # Set the device (CPU or GPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-INTERPRET_MODE = True
+INTERPRET_MODE = False
+stop = 0
+attention_weights_l = []
 
-def plot_attention_weights(attention_weights):
-    for attention_weight in attention_weights:
-        plt.figure(figsize=(10, 10))
-        sns.heatmap(attention_weight.detach().cpu().numpy(), cmap='viridis')
-        plt.title(f'Attention Heatmap')
-        plt.xlabel('Key Position')
-        plt.ylabel('Query Position')
-        plt.show()
+def plot_attention_weights(output_file="attention_plots.pdf"):
+    with PdfPages(output_file) as pdf:
+        for attention_weights in attention_weights_l:
+            for attention_weight in attention_weights:
+                plt.figure(figsize=(5, 5))
+                sns.heatmap(attention_weight.detach().cpu().numpy(), cmap='viridis')
+                plt.title(f'Attention Heatmap')
+                plt.xlabel('Key Position')
+                plt.ylabel('Query Position')
+                pdf.savefig()  # Save the current figure into the PDF
+                plt.close()  # Close the figure to avoid display
 
 def create_kqv_matrix(input_vector_dim, n_heads = 1):
     new_dim = int(input_vector_dim / n_heads)
@@ -72,9 +78,9 @@ def create_causal_mask(embed_dim, n_heads, max_context_len):
 
 
 def self_attention(v, A, mask = None):
+    global INTERPRET_MODE
 
     B, N, D = A.size()
-    print("A size:", B, N, D)
 
     # Slice mask to create a 1 x N x N tensor
     mask = mask[:, :N, :N]
@@ -87,7 +93,13 @@ def self_attention(v, A, mask = None):
     norm_A = F.softmax(A, dim=-1)
 
     if INTERPRET_MODE:
-        plot_attention_weights(norm_A)
+        global stop
+        if stop < 36:
+            attention_weights_l.append(norm_A)
+            stop += 1
+        else:
+            plot_attention_weights()
+            INTERPRET_MODE = False
 
     # Compute the dot product between norm_A and v
     sa = torch.bmm(norm_A, v)
@@ -96,7 +108,7 @@ def self_attention(v, A, mask = None):
 
 def self_attention_layer(x, kqv_matrix, attention_mask):
     k, q, v = kqv(x, kqv_matrix)
-    att = attention_scores(k, q)
+    att = attention_scores(q, k)
     sa = self_attention(v, att, attention_mask)
     return sa
 

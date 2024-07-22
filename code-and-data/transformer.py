@@ -153,7 +153,6 @@ class TransformerLM(nn.Module):
                 if len(feed_to_lm) > self.max_context_len:
                     # if we have more tokens than context length, trim it to context length.
                     feed_to_lm = feed_to_lm[-self.max_context_len:]
-                print(feed_to_lm)
                 logits = self(torch.tensor([feed_to_lm], dtype=torch.int32).to(device))
                 logits_for_last_token = logits[0][-1]
 
