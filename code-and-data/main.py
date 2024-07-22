@@ -33,12 +33,12 @@ if __name__ == '__main__':
     seq_len = 128
     batch_size = 64
     data_path = "data/"
-    n_layers = 6
+    n_layers = 15
     n_heads = 6
     embed_size = 192
     mlp_hidden_size = embed_size * 4
 
-    learning_rate = 5e-4
+    learning_rate = 1e-3  # 5e-4
     gradient_clipping = 1.0
     dropout = True
 
